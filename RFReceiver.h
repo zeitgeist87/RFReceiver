@@ -29,19 +29,19 @@ class RFReceiver : PinChangeInterruptHandler {
 
     byte inputBuf[MAX_PACKAGE_SIZE];
     byte inputBufLen;
+    uint16_t checksum;
     volatile bool inputBufReady;
 
     // Used to filter out duplicate packages
     byte prevPackageIds[MAX_SENDER_ID + 1];
 
     byte recvDataRaw(byte * data);
-    byte recvData(byte * data);
 
   public:
     RFReceiver(byte inputPin, unsigned int pulseLength = 100) : inputPin(inputPin),
-        pulseLength(pulseLength), inputBufLen(0), inputBufReady(false), bitCount(0),
-        byteCount(0), errorCorBufCount(0), lastTimestamp(0), packageStarted(false),
-        shiftByte(0), lastSuccTimestamp(0) {
+        pulseLength(pulseLength), shiftByte(0), bitCount(0), byteCount(0),
+        errorCorBufCount(0), lastTimestamp(0), lastSuccTimestamp(0),
+        packageStarted(false), inputBufLen(0), checksum(0), inputBufReady(false) {
 
     }
     void begin() {
@@ -51,6 +51,16 @@ class RFReceiver : PinChangeInterruptHandler {
 
     void stop() {
       detachPCInterrupt(digitalPinToPCINT(inputPin));
+    }
+
+    /**
+     * Returns true if a valid and deduplicated package is in the buffer, so
+     * that a subsequent call to recvPackage() will not block.
+     *
+     * @returns True if recvPackage() will not block
+     */
+    bool ready() {
+      return inputBufReady;
     }
 
     byte recvPackage(byte * data, byte *pSenderId = 0, byte *pPackageId = 0);

@@ -2,3 +2,4 @@
 .cproject
 .project
 *.swp
+/Debug/

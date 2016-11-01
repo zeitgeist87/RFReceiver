@@ -6,17 +6,6 @@ static inline uint16_t crc_update(uint16_t crc, uint8_t data) {
   return _crc_ccitt_update(crc, data);
 }
 
-static bool checkCrc(byte * data, byte len) {
-  uint16_t crc = 0xffff;
-  crc = crc_update(crc, len);
-
-  for (int i = 0; i < len; ++i) {
-    crc = crc_update(crc, data[i]);
-  }
-
-  return !crc;
-}
-
 #define checkBits(b1, b2, b3, pos) (((((b1) & (1 << pos)) != 0) + \
                                    (((b2) & (1 << pos)) != 0) + \
                                    (((b3) & (1 << pos)) != 0)) > 1)
@@ -58,11 +47,23 @@ void RFReceiver::decodeByte(byte inputByte) {
     }
 
     inputBufLen = errorCorBuf[0];
+    checksum = crc_update(checksum, inputBufLen);
   } else {
-    inputBuf[byteCount - 1] = recoverByte(errorCorBuf[0], errorCorBuf[1], errorCorBuf[2]);
+    byte data = recoverByte(errorCorBuf[0], errorCorBuf[1], errorCorBuf[2]);
+    inputBuf[byteCount - 1] = data;
+    // Calculate the checksum on the fly
+    checksum = crc_update(checksum, data);
 
     if (byteCount == inputBufLen) {
-      inputBufReady = true;
+      byte senderId = inputBuf[inputBufLen - 4];
+      byte packageId = inputBuf[inputBufLen - 3];
+
+      // Ignore duplicate packages and check if the checksum is correct
+      if (!checksum && senderId <= MAX_SENDER_ID && prevPackageIds[senderId] != packageId) {
+        prevPackageIds[senderId] = packageId;
+        inputBufReady = true;
+      }
+
       packageStarted = false;
       return;
     }
@@ -116,6 +117,7 @@ void RFReceiver::handlePCInterrupt(int8_t pcIntNum, bool state) {
     byteCount = 0;
     errorCorBufCount = 0;
     inputBufLen = 0;
+    checksum = 0xffff;
     packageStarted = true;
   }
 }
@@ -124,38 +126,27 @@ byte RFReceiver::recvDataRaw(byte * data) {
   while (!inputBufReady);
 
   byte len = inputBufLen;
-  memcpy(data, inputBuf, len);
+  memcpy(data, inputBuf, len - 2);
 
   // Enable the input as fast as possible
   inputBufReady = false;
-  return len;
-}
-
-byte RFReceiver::recvData(byte * data) {
-  for (;;) {
-    byte len = recvDataRaw(data);
-
-    if (checkCrc(data, len))
-      return len - 2;
-  }
+  // The last two bytes contain the checksum, which is no longer needed
+  return len - 2;
 }
 
 byte RFReceiver::recvPackage(byte *data, byte *pSenderId, byte *pPackageId) {
   for (;;) {
-    byte len = recvData(data);
+    byte len = recvDataRaw(data);
     byte senderId = data[len - 2];
     byte packageId = data[len - 1];
 
-    if (senderId > MAX_SENDER_ID || prevPackageIds[senderId] == packageId)
-      continue;
-
-    prevPackageIds[senderId] = packageId;
     if (pSenderId)
       *pSenderId = senderId;
 
     if (pPackageId)
       *pPackageId = packageId;
 
+    // The last two bytes contain the sender and package ids
     return len - 2;
   }
 }
