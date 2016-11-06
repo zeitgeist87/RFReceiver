@@ -6,25 +6,14 @@ static inline uint16_t crc_update(uint16_t crc, uint8_t data) {
   return _crc_ccitt_update(crc, data);
 }
 
-#define checkBits(b1, b2, b3, pos) (((((b1) & (1 << pos)) != 0) + \
-                                   (((b2) & (1 << pos)) != 0) + \
-                                   (((b3) & (1 << pos)) != 0)) > 1)
-
 static inline byte recoverByte(const byte b1, const byte b2, const byte b3) {
-  byte res;
-
-  if (b1 == b2 && b1 == b3)
-    return b1;
-
-  res = checkBits(b1, b2, b3, 0);
-  res |= checkBits(b1, b2, b3, 1) << 1;
-  res |= checkBits(b1, b2, b3, 2) << 2;
-  res |= checkBits(b1, b2, b3, 3) << 3;
-  res |= checkBits(b1, b2, b3, 4) << 4;
-  res |= checkBits(b1, b2, b3, 5) << 5;
-  res |= checkBits(b1, b2, b3, 6) << 6;
-  res |= checkBits(b1, b2, b3, 7) << 7;
-
+  // Discard all bits that occur only once in the three input bytes
+  // Use all bits that are in b1 and b2
+  byte res = b1 & b2;
+  // Use all bits that are in b1 and b3
+  res |= b1 & b3;
+  // Use all bits that are in b2 and b3
+  res |= b2 & b3;
   return res;
 }
 
