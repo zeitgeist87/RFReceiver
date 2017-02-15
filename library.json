@@ -1,0 +1,23 @@
+{
+    "name": "RFReceiver",
+    "description": "Library for low-cost 433 MHz receiver modules with forward error correction.",
+    "keywords": "receiver, 433mhz, crc",
+    "authors": [
+        {
+            "name": "Andreas Rohner",
+            "email": "andreas.rohner@gmx.net",
+            "url": "https://andreasrohner.at",
+            "maintainer": true
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/zeitgeist87/RFReceiver"
+    },
+    "version": "0.1",
+    "homepage": "https://github.com/zeitgeist87/RFReceiver",
+    "frameworks": "Arduino",
+    "examples": [
+        "examples/*/*.ino"
+    ]
+}
