@@ -17,6 +17,9 @@
     "version": "0.1",
     "homepage": "https://github.com/zeitgeist87/RFReceiver",
     "frameworks": "Arduino",
+    "dependencies": {
+        "PinChangeInterruptHandler": "0.1"
+    },
     "examples": [
         "examples/*/*.ino"
     ]
