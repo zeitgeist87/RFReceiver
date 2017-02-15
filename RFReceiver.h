@@ -1,12 +1,11 @@
 #ifndef RECEIVER_H
 #define RECEIVER_H
 
-#if defined(ARDUINO) && ARDUINO >= 100
-  #include "Arduino.h"
-#elif defined(ENERGIA)
-  #include "Energia.h"
+#if ARDUINO >= 100
+#include "Arduino.h"
 #else
-  #include "WProgram.h"
+#include "WProgram.h"
+#include "pins_arduino.h"
 #endif
 
 #include <PinChangeInterruptHandler.h>
