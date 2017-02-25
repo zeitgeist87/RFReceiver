@@ -14,7 +14,7 @@
         "type": "git",
         "url": "https://github.com/zeitgeist87/RFReceiver"
     },
-    "version": "0.1",
+    "version": "0.2",
     "homepage": "https://github.com/zeitgeist87/RFReceiver",
     "frameworks": "Arduino",
     "dependencies": {

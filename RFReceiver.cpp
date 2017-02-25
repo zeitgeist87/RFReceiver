@@ -76,42 +76,27 @@ void RFReceiver::handlePCInterrupt(int8_t pcIntNum, bool state) {
   if (inputBufReady)
     return;
 
-  unsigned long time = micros();
-  unsigned int diff = time - lastTimestamp;
-  lastTimestamp = time;
+  ++changeCount;
 
-  if (diff <= (pulseLength << 1))
-    return;
+  {
+    unsigned long time = micros();
+    if (time - lastTimestamp < pulseLimit)
+      return;
 
-  byte missingBits = (((unsigned int)(time - lastSuccTimestamp)) + (pulseLength << 1)) / (pulseLength << 2);
-  lastSuccTimestamp = time;
-
-  if (packageStarted && bitCount + missingBits > 8) {
-    shiftByte >>= 8 - bitCount;
-    decodeByte(shiftByte);
-    missingBits -= 8 - bitCount;
-
-    while (missingBits > 8) {
-      decodeByte(0);
-      missingBits -= 8;
-    }
-
-    shiftByte = 0;
-    bitCount = 0;
+    lastTimestamp = time;
   }
 
-  shiftByte >>= missingBits;
-  if (!state)
-     shiftByte |= 0x80;
+  shiftByte = (shiftByte >> 2) | ((changeCount - 1) << 6);
+  changeCount = 0;
 
   if (packageStarted) {
-    bitCount += missingBits;
+    bitCount += 2;
     if (bitCount != 8)
       return;
     bitCount = 0;
 
     decodeByte(shiftByte);
-  } else if (shiftByte == 0xAA) {
+  } else if (shiftByte == 0xE0) {
     // New package starts here
     bitCount = 0;
     byteCount = 0;
